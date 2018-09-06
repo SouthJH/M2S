@@ -1,6 +1,4 @@
 
-#include "m2s.h"
-
 
 #define   CHECK_ERROR(err) \
   if (err != CL_SUCCESS) { \

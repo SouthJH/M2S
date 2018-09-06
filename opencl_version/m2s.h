@@ -40,7 +40,7 @@ m2s_int m2s_clGetPlatformIDs(m2s_uint num_entries,
 m2s_int m2s_clGetDeviceIDs(m2s_platform_id platform, 
                            m2s_device_type device_type, 
                            m2s_uint num_entries, 
-                           m2s_device_id device, 
+                           m2s_device_id *device, 
                            m2s_uint *num_devices);
 m2s_context m2s_clCreateContext(const m2s_context_properties *properties, 
                                 m2s_uint num_devices, 

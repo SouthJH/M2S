@@ -16,16 +16,17 @@ typedef struct container {
 
 
 // opencl_api.c
-int m2s_clGetPlatformIDs();
-int m2s_clGetDeviceIDs();
-int m2s_clCreateContext();
-int m2s_clCreateCommandQueue();
-int m2s_clCreateKernel();
-int m2s_clCreateBuffer();
-int m2s_clEnqueueWriteBuffer();
-int m2s_clEnqueueReadBuffer();
-int m2s_clEnqueueCopyBuffer();
-int m2s_clSetKernelArg();
-int m2s_EnqueueNDRangeKernel();
+int m2s_clGetPlatformIDs(m2s_cont *container);
+int m2s_clGetDeviceIDs(m2s_cont *container);
+int m2s_clCreateContext(m2s_cont *container);
+int m2s_clCreateCommandQueue(m2s_cont *container);
+int m2s_clCreateProgramWithSource(m2s_cont *container);
+int m2s_clCreateKernel(m2s_cont *container);
+int m2s_clCreateBuffer(m2s_cont *container);
+int m2s_clEnqueueWriteBuffer(m2s_cont *container);
+int m2s_clEnqueueReadBuffer(m2s_cont *container);
+int m2s_clEnqueueCopyBuffer(m2s_cont *container);
+int m2s_clSetKernelArg(m2s_cont *container);
+int m2s_EnqueueNDRangeKernel(m2s_cont *container);
 
-int m2s_clGetEventProfilingInfo();
+int m2s_clGetEventProfilingInfo(m2s_cont *container);

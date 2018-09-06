@@ -38,7 +38,7 @@ m2s_int m2s_clGetPlatformIDs(m2s_uint num_entries,
                              m2s_platform_id *platforms, 
                              m2s_uint *num_platforms);
 m2s_int m2s_clGetDeviceIDs(m2s_platform_id platform, 
-                           m2s_device_type device type, 
+                           m2s_device_type device_type, 
                            m2s_uint num_entries, 
                            m2s_device_id device, 
                            m2s_uint *num_devices);

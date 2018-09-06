@@ -1,42 +1,50 @@
 #include "m2s.h"
 #include "constants.h"
 
-// support only singel platform
-cl_int m2s_clGetPlatformIDs(m2s_cont *container) {
-  if (clGetPlatformIDs(1, &container->platform, NULL) == CL_SUCCESS)
-    return SUCCESS;
-  else
-    return GET_PLATFORM_ERR;
+
+m2s_int m2s_clGetPlatformIDs(m2s_uint num_entries,
+                             m2s_platform_id *platforms, 
+                             m2s_uint *num_platforms) 
+{
+  if (num_entries == 0) {
+    return clGetPlatformIDs(0, NULL, num_platforms);
+  }
+  else if (num_entries > 0) {
+    return clGetPlatformIDs(num_entries, platforms, NULL);
+  }
+  else {
+    //printf("ERROR: wrong platform entries\n");
+    return GET_PLATFORM_ERR
+  }
 }
 
-// need to edit
-// need to update num_devices
-cl_int m2s_clGetDeviceIDs(m2s_cont *container, cl_device_type device_type, cl_uint num_entries, cl_uint *num_devices) {
-  if (num_entries == 0)
-  {
-    cl_uint nd;
-    clGetDeviceIDs(container->platform, device_type, 0, NULL, &nd);
-    if (nd > 0) {
-      *num_devices = nd;
-      return SUCCESS;
-    }
-    else
-      return GET_DEVICE_NUM_ERR;
+m2s_int m2s_clGetDeviceIDs(m2s_platform_id platform, 
+                           m2s_device_type device_type, 
+                           m2s_uint num_entries, 
+                           m2s_device_id *device, 
+                           m2s_uint *num_devices) 
+{
+  if (num_entries == 0) {
+    return clGetDeviceIDs(platform, device_type, 0, NULL, num_devices);
   }
-  else if (num_entries > 0)
-  {
-    container->device = (cl_device_id *)malloc(sizeof(cl_device_id) * num_devices);
-    if (container->device == NULL) {
-      //printf("malloc failed\n");
+  else if (num_entries > 0) {
+    if (device->num_entries != 0) {
+      printf("ERROR: already used deivce\n");
+      return GET_DEVICE_ID_ERR;
+    }
+    
+    device->num_entries = num_entries;
+    device->device = (cl_device_id)malloc(sizeof(cl_device_id) * num_entries);
+    if (device->device == NULL) {
+      printf("ERROR: failed to malloc\n");
       return ALLOC_ERR;
     }
-    if (clGetDeviceIDs(container->platform, device_type, num_entries, container->device, NULL) == CL_SUCCESS)
-      return SUCCESS;
-    else
-      return GET_DEVICE_ID_ERR;
+    
+    return clGetDeviceIDs(platform, device_type, num_entries, device->device, NULL);
   }
-  else
-    return GET_DEVICE_NUM_ERR;
+  else {
+    return GET_DEVICE_NUM_ERR
+  }
 }
 
 // create context with all devices in a platform

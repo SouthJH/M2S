@@ -8,11 +8,11 @@
 // support only single platform
 typedef struct container {
   cl_platform_id    platform;
-  cl_device_id      device[10];
+  cl_device_id      *device;
   cl_context        context;
-  cl_command_queue  queue[10];
+  cl_command_queue  *queue;
   cl_kernel         kernel;
-} cont;
+} m2s_cont;
 
 
 // opencl_api.c

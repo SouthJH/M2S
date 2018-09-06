@@ -1,4 +1,10 @@
-#include "../utils.h"
+#include <CL/cl.h>
+
+#define   CHECK_ERROR(err) \
+  if (err != CL_SUCCESS) { \
+     printf("[%s:%d] ERROR %d\n", __FILE__, __LINE__, err); \
+     exit(EXIT_FAILURE); \
+  }
 
 void printType(cl_device_type type) {
 	printf("\t  - Type \t\t");

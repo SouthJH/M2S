@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <CL/cl.h>
+#include <CL/opencl.h>
 
 // variables
 #define   m2s_int           cl_int
@@ -17,7 +17,7 @@
 typedef struct M2S_DEViCE {
   cl_uint       num_entries;
   cl_device_id  *device;
-}m2s_device;
+}m2s_device_id;
 typedef struct M2S_QUEUE {
   cl_uint           num_entries;
   cl_command_queue  *queue;
@@ -30,7 +30,7 @@ typedef struct M2S_MEM {
 #define   m2s_mem_flags   cl_mem_flags
 
 // not supported
-#define   m2s_context_properties *properties  cl_context_properties *properties
+#define   m2s_context_properties  cl_context_properties
 
 
 // opencl_api.c
@@ -49,7 +49,7 @@ m2s_context m2s_clCreateContext(const m2s_context_properties *properties,
                                 void *user_data, 
                                 m2s_int *errcode_ret);
 m2s_command_queue m2s_clCreateCommandQueue(m2s_context context, 
-                                           m2s_context_id device, 
+                                           m2s_device_id device, 
                                            m2s_command_queue_properties properties, 
                                            m2s_int *errcode_ret);
 m2s_program m2s_clCreateProgramWithSource(m2s_context context, 

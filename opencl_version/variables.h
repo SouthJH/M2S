@@ -16,7 +16,10 @@
 #define		m2s_device_type		cl_device_type
 
 // -------------- test code
-typedef struct M2S_HInt
+typedef struct M2S_DEVICE_HINT {
+	cl_uint 	num_entries;
+	cl_uint 	*ratio;
+}hint;
 // -----------------------
 
 // data structures
@@ -70,7 +73,9 @@ typedef struct M2S_QUEUE {
 typedef struct M2S_MEM {
 	cl_uint num_entries;
 	cl_mem  *mems;
-	// hit
+	
+	// hint
+	cl_uint mem_hint;
 
 	int initialize(int num) {
 		if (num <= 0)

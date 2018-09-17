@@ -1,4 +1,5 @@
-#include <CL/cl.h>
+
+#include "constants.h"
 
 // variable types
 #define		m2s_char			cl_char
@@ -15,12 +16,6 @@
 #define		m2s_bool			cl_bool
 #define		m2s_device_type		cl_device_type
 
-// -------------- test code
-typedef struct M2S_DEVICE_HINT {
-	cl_uint 	num_entries;
-	cl_uint 	*ratio;
-}hint;
-// -----------------------
 
 // data structures
 #define		m2s_platform_id		cl_platform_id
@@ -29,9 +24,10 @@ typedef struct M2S_DEVICE_HINT {
 #define		m2s_kernel			cl_kernel
 #define		m2s_event			cl_event
 typedef struct M2S_DEViCE {
-	cl_uint       num_entries;
-	cl_device_id  *devices;
-	// hit
+	cl_uint			num_entries;
+	cl_device_id	*devices;
+	// device hint ratio
+	cl_uint			*device_hint;
 
 	int initialize(int num) {
 		if (num <= 0)
@@ -71,11 +67,9 @@ typedef struct M2S_QUEUE {
 	}
 }m2s_command_queue;
 typedef struct M2S_MEM {
-	cl_uint num_entries;
-	cl_mem  *mems;
-	
-	// hint
-	cl_uint mem_hint;
+	cl_uint			num_entries;
+	cl_mem			*mems;
+	cl_uint			mem_hint;
 
 	int initialize(int num) {
 		if (num <= 0)
@@ -99,32 +93,3 @@ typedef struct M2S_MEM {
 // not supported
 #define		m2s_context_properties		cl_context_properties
 #define		m2s_sampler					cl_sampler
-
-
-
-// parameters
-#define		M2S_MEM_SIZE					sizeof(cl_mem)
-
-#define		M2S_TRUE						CL_TRUE
-#define		M2S_FALSE						CL_FALSE
-#define		M2S_BLOCKING					CL_BLOCKING
-#define		M2S_NON_BLOCKING				CL_NON_BLOCKING
-
-#define		M2S_MEM_READ_WRITE				CL_MEM_READ_WRITE
-#define		M2S_MEM_READ_ONLY				CL_MEM_READ_ONLY
-#define		M2S_MEM_WRITE_ONLY				CL_MEM_WRITE_ONLY
-#define		M2S_MEM_COPY_HOST_PTR			CL_MEM_COPY_HOST_PTR
-
-#define		M2S_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE		CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE
-
-#define		M2S_PLATFORM_NAME				CL_PLATFORM_NAME
-#define		M2S_PLATFORM_VENDOR				CL_PLATFORM_VENDOR
-#define		M2S_PLATFORM_VERSION			CL_PLATFORM_VERSION
-#define		M2S_PLATFORM_PROFILE			CL_PLATFORM_PROFILE
-#define		M2S_PLATFORM_EXTENSIONS			CL_PLATFORM_EXTENSIONS
-#define		M2S_DEVICE_TYPE_ALL				CL_DEVICE_TYPE_ALL
-#define		M2S_DEVICE_TYPE_GPU				CL_DEVICE_TYPE_GPU
-#define		M2S_DEVICE_TYPE_CPU				CL_DEVICE_TYPE_CPU
-#define		M2S_DEVICE_TYPE_ACCELERATOR		CL_DEVICE_TYPE_ACCELERATOR
-#define		M2S_DEVICE_TYPE_CUSTOM			CL_DEVICE_TYPE_CUSTOM
-#define		M2S_DEVICE_TYPE_DEFAULT			CL_DEVICE_TYPE_DEFAULT

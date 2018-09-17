@@ -15,7 +15,9 @@
 #define		m2s_bool			cl_bool
 #define		m2s_device_type		cl_device_type
 
-
+// -------------- test code
+typedef struct M2S_HInt
+// -----------------------
 
 // data structures
 #define		m2s_platform_id		cl_platform_id

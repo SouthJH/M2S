@@ -4,6 +4,7 @@
 #include "variables.h"
 
 
+
 // opencl_api.c
 extern m2s_int m2sGetPlatformIDs(m2s_uint num_entries,
 								 m2s_platform_id *platforms,
@@ -36,12 +37,14 @@ extern m2s_kernel m2sCreateKernel(m2s_program program,
 								  const char *kernel_name,
 								  m2s_int *errcode_ret);
 extern m2s_mem m2sCreateBuffer(m2s_context context,
-							   m2s_device_id *device, 
+							   m2s_device_id *device,
+							   cl_uint mem_hint,
 							   m2s_mem_flags flags,
 							   size_t size,
 							   void *host_ptr,
 							   m2s_int *errcode_ret);
 extern m2s_int m2sEnqueueWriteBuffer(m2s_command_queue command_queue,
+									 m2s_device_id *device,
 									 m2s_mem buffer,
 									 m2s_bool blocking_write,
 									 size_t offset,
@@ -51,6 +54,7 @@ extern m2s_int m2sEnqueueWriteBuffer(m2s_command_queue command_queue,
 									 const m2s_event *event_wait_list,
 									 m2s_event *event);
 extern m2s_int m2sEnqueueReadBuffer(m2s_command_queue command_queue,
+									m2s_device_id *device,
 									m2s_mem buffer,
 									m2s_bool blocking_write,
 									size_t offset,
@@ -89,3 +93,5 @@ extern m2s_int m2sWaitForEvents(m2s_uint num_events,
 
 extern m2s_int m2sReleaseMemObject();
 extern m2s_int m2sReleaseCommandQueue();
+
+extern m2s_int m2sGetDeviceHints(m2s_device_id *device);

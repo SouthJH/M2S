@@ -1,5 +1,4 @@
 #include "m2s.h"
-#include "constants.h"
 
 /*
 *	target API: clGetPlatformIDs
@@ -32,6 +31,9 @@ m2s_int m2sGetDeviceIDs(m2s_platform_id platform, m2s_device_type device_type, m
 	}
 	else if (num_entries > 0) {
 		device->initialize(num_entries);
+		if (m2sGetDeviceHints(device) != CL_SUCCESS) {
+			return M2S_INVALID_DEVICE_HINT;
+		}
 		return clGetDeviceIDs(platform, device_type, num_entries, device->devices, NULL);
 	}
 	else {
@@ -122,7 +124,7 @@ m2s_kernel m2sCreateKernel(m2s_program program, const char *kernel_name, m2s_int
 *
 *	need to set hint
 */
-m2s_mem m2sCreateBuffer(m2s_context context, m2s_device_id *device, m2s_mem_flags flags, size_t size, void *host_ptr, m2s_int *errcode_ret) {
+m2s_mem m2sCreateBuffer(m2s_context context, m2s_device_id *device, cl_uint mem_hint, m2s_mem_flags flags, size_t size, void *host_ptr, m2s_int *errcode_ret) {
 	m2s_mem mem;
 
 	if (device->num_entries <= 0) {
@@ -133,6 +135,7 @@ m2s_mem m2sCreateBuffer(m2s_context context, m2s_device_id *device, m2s_mem_flag
 	}
 
 	mem.initialize(device->num_entries);
+	mem.mem_hint = mem_hint;
 
 	for (int idx = 0; idx < mem.num_entries; ++idx)
 	{
@@ -143,8 +146,6 @@ m2s_mem m2sCreateBuffer(m2s_context context, m2s_device_id *device, m2s_mem_flag
 		}
 	}
 
-	// set hint
-
 	return mem;
 }
 
@@ -153,7 +154,7 @@ m2s_mem m2sCreateBuffer(m2s_context context, m2s_device_id *device, m2s_mem_flag
 *	CL_TRUE case
 *	event is not yet supported
 */
-m2s_int m2sEnqueueWriteBuffer(m2s_command_queue command_queue, m2s_mem buffer, m2s_bool blocking_write, size_t offset, size_t size, const void *ptr, 
+m2s_int m2sEnqueueWriteBuffer(m2s_command_queue command_queue, m2s_device_id *device, m2s_mem buffer, m2s_bool blocking_write, size_t offset, size_t size, const void *ptr, 
 	m2s_uint num_events_in_wait_list, const m2s_event *event_wait_list, m2s_event *event)
 {
 	/*
@@ -182,7 +183,7 @@ m2s_int m2sEnqueueWriteBuffer(m2s_command_queue command_queue, m2s_mem buffer, m
 *
 *	CL_TRUE case
 */
-m2s_int m2sEnqueueReadBuffer(m2s_command_queue command_queue, m2s_mem buffer, m2s_bool blocking_write, size_t offset, size_t size, void *ptr, 
+m2s_int m2sEnqueueReadBuffer(m2s_command_queue command_queue, m2s_device_id *device, m2s_mem buffer, m2s_bool blocking_write, size_t offset, size_t size, void *ptr,
 	m2s_uint num_events_in_wait_list, const m2s_event *event_wait_list, m2s_event *event)
 {
 	/*
@@ -287,4 +288,52 @@ m2s_int m2sEnqueueNDRangeKernel(m2s_command_queue command_queue, m2s_kernel kern
 	}
 
 	return err;
+}
+
+/*
+*	target API: None
+*
+*	This API function is created only for hints of gpus
+*/
+m2s_int m2sGetDeviceHints(m2s_device_id *device)
+{
+	if (device->num_entries <= 0) {
+		printf("GetDeviceHints Error: wrong num_entries of device\n");
+		return M2S_INVALID_NUM_ENTRIES;
+	}
+	else if (device->devices == NULL) {
+		printf("GetDeviceHints Error: m2s device is not set properly\n");
+	}
+
+	int n = device->num_entries;
+	device->device_hint = (cl_uint *)malloc(sizeof(cl_uint) * n);
+
+	cl_ulong *local_mem_size = (cl_ulong *)malloc(sizeof(cl_ulong) * n);
+	cl_ulong *global_mem_size = (cl_ulong *)malloc(sizeof(cl_ulong) * n);
+	size_t *max_work_group_size = (size_t *)malloc(sizeof(size_t) * n);
+	cl_uint *max_compute_units = (cl_uint *)malloc(sizeof(cl_uint) * n);
+	cl_ulong *max_mem_alloc_size = (cl_ulong *)malloc(sizeof(cl_ulong) * n);
+
+	// load balance algorithm runs
+	cl_uint sum = 0;
+	for (int idx = 0; idx < n; ++idx) {
+		device->device_hint[idx] = 100/n;
+		sum += device->device_hint[idx];
+	}
+
+	if (sum < 100) {
+		device->device_hint[0] += (100 - sum);
+	}
+	else if (sum > 100) {
+		printf("GetDeviceHints Error: device hint is not valid\n");
+		return M2S_INVALID_DEVICE_HINT;
+	}
+
+	free(local_mem_size);
+	free(global_mem_size);
+	free(max_work_group_size);
+	free(max_compute_units);
+	free(max_mem_alloc_size);
+
+	return CL_SUCCESS;
 }

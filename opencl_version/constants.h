@@ -9,12 +9,19 @@
 
 
 // hints
-#define		M2S_MEM_HINT_ROW			0x100
-#define		M2S_MEM_HINT_COL			0x101
-#define		M2S_MEM_HINT_BLK			0X102
-#define		M2S_MEM_HINT_SORT			0x103
-#define		M2S_MEM_HINT_MAT			0x104
+#define		M2S_MEM_HINT_1D				0x100
+#define		M2S_MEM_HINT_ROW			0x101
+#define		M2S_MEM_HINT_COL			0x102
+#define		M2S_MEM_HINT_BLK			0X103
+#define		M2S_MEM_HINT_SORT			0x104
 #define		M2S_MEM_HINT_WHOLE			0x105
+#define		M2S_MEM_HINT_MAT			0x106
+
+#define		M2S_DATA_TYPE_CHAR			0x200
+#define		M2S_DATA_TYPE_INT			0x201
+#define		M2S_DATA_TYPE_UINT			0x202
+#define		M2S_DATA_TYPE_FLOAT			0x203
+#define		M2S_DATA_TYPE_DOUBLE		0x204
 
 
 // parameters

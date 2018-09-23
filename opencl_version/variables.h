@@ -27,7 +27,7 @@ typedef struct M2S_DEViCE {
 	cl_uint			num_entries;
 	cl_device_id	*devices;
 	// device hint ratio
-	cl_uint			*device_hint;
+	size_t			*device_hint;
 
 	int initialize(int num) {
 		if (num <= 0)
@@ -70,6 +70,7 @@ typedef struct M2S_MEM {
 	cl_uint			num_entries;
 	cl_mem			*mems;
 	cl_uint			mem_hint;
+	cl_uint			data_type;
 
 	int initialize(int num) {
 		if (num <= 0)

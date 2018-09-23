@@ -34,6 +34,7 @@ m2s_int m2sGetDeviceIDs(m2s_platform_id platform, m2s_device_type device_type, m
 		if (m2sGetDeviceHints(device) != CL_SUCCESS) {
 			return M2S_INVALID_DEVICE_HINT;
 		}
+		
 		return clGetDeviceIDs(platform, device_type, num_entries, device->devices, NULL);
 	}
 	else {
@@ -74,7 +75,7 @@ m2s_command_queue m2sCreateCommandQueue(m2s_context context, m2s_device_id devic
 		return queue;
 	}
 
-	for (int idx = 0; idx < device.num_entries; ++idx)
+	for (m2s_uint idx = 0; idx < device.num_entries; ++idx)
 	{
 		queue.queues[idx] = clCreateCommandQueue(context, device.devices[idx], properties, errcode_ret);
 		if (*errcode_ret != CL_SUCCESS) {
@@ -137,7 +138,7 @@ m2s_mem m2sCreateBuffer(m2s_context context, m2s_device_id *device, cl_uint mem_
 	mem.initialize(device->num_entries);
 	mem.mem_hint = mem_hint;
 
-	for (int idx = 0; idx < mem.num_entries; ++idx)
+	for (m2s_uint idx = 0; idx < mem.num_entries; ++idx)
 	{
 		mem.mems[idx] = clCreateBuffer(context, flags, size, host_ptr, errcode_ret);
 		if (*errcode_ret != CL_SUCCESS) {
@@ -154,28 +155,85 @@ m2s_mem m2sCreateBuffer(m2s_context context, m2s_device_id *device, cl_uint mem_
 *	CL_TRUE case
 *	event is not yet supported
 */
-m2s_int m2sEnqueueWriteBuffer(m2s_command_queue command_queue, m2s_device_id *device, m2s_mem buffer, m2s_bool blocking_write, size_t offset, size_t size, const void *ptr, 
+m2s_int m2sEnqueueWriteBuffer(m2s_command_queue command_queue, m2s_device_id *device, m2s_mem buffer, m2s_bool blocking_write, size_t offset, size_t size, void *ptr, 
 	m2s_uint num_events_in_wait_list, const m2s_event *event_wait_list, m2s_event *event)
 {
-	/*
-	switch (buffer->mem_hint) {
-
+	if (device->num_entries < 1) {
+		printf("EnqueueWriteBuffer Error: wrong num_entries of device\n");
+		return M2S_INVALID_NUM_ENTRIES;
 	}
-	*/
+	if (command_queue.num_entries != device->num_entries || device->num_entries != buffer.num_entries) {
+		printf("EnqueueWriteBuffer Error: different num_entries between queue, device, buffer\n");
+		return M2S_INVALID_NUM_ENTRIES;
+	}
+	if (device->device_hint == NULL) {
+		if (m2sGetDeviceHints(device) != CL_SUCCESS) {
+			printf("EnqueueWriteBuffer Error: cannot produce device hint\n");
+			return M2S_INVALID_DEVICE_HINT;
+		}
+	}
+	
+	m2s_uint num = device->num_entries;
 	cl_int err;
 
-	// whole transfer version
-	for (int idx = 0; idx < buffer.num_entries; ++idx)
-	{
-		err = clEnqueueWriteBuffer(command_queue.queues[idx], buffer.mems[idx], blocking_write, offset, size, ptr, num_events_in_wait_list, event_wait_list, event);
-
-		if (err != CL_SUCCESS) {
-			printf("EnqueueWriteBuffer Error: cannot write buffer\n");
-			return err;
+	if (num == 1 || buffer.mem_hint == M2S_MEM_HINT_WHOLE) {
+		for (m2s_uint idx = 0; idx < num; ++idx) {
+			err = clEnqueueWriteBuffer(command_queue.queues[idx], buffer.mems[idx], CL_FALSE, offset, size, ptr, num_events_in_wait_list, event_wait_list, event);
+			if (err != CL_SUCCESS) {
+				printf("EnqueueWriteBuffer Error: cannot write buffer\n");
+				return err;
+			}
 		}
 	}
 
-	return err;
+	else if (buffer.mem_hint == M2S_MEM_HINT_1D)
+	{
+		size_t current_size = 0;
+		size_t total_size = 0;
+
+		for (m2s_uint idx = 1; idx < num; ++idx)
+		{
+			current_size = size * device->device_hint[idx] / 100;
+
+			err = clEnqueueWriteBuffer(command_queue.queues[idx], buffer.mems[idx], CL_FALSE, 0, current_size, (void *)((int *)ptr + total_size), 0, NULL, NULL);
+			if (err != CL_SUCCESS) {
+				printf("EnqueueWriteBuffer Error: cannot write buffer\n");
+				return err;
+			}
+
+			total_size += current_size;
+		}
+
+		if (size > total_size) {
+			current_size = size - total_size;
+			err = clEnqueueWriteBuffer(command_queue.queues[0], buffer.mems[0], CL_FALSE, 0, current_size, (void *)((int *)ptr + total_size), 0, NULL, NULL);
+			if (err != CL_SUCCESS) {
+				printf("EnqueueWriteBuffer Error: cannot write buffer\n");
+				return err;
+			}
+		}
+		else {
+			printf("maybe memory division failed\n");
+		}
+	}
+
+	// 2D
+	else if (buffer.mem_hint == M2S_MEM_HINT_ROW)
+	{
+	}
+
+	// 2D
+	else if (buffer.mem_hint == M2S_MEM_HINT_COL)
+	{
+	}
+
+	if (blocking_write == CL_TRUE) {
+		for (m2s_uint idx = 0; idx < num; ++idx) {
+			clFinish(command_queue.queues[idx]);
+		}
+	}
+
+	return CL_SUCCESS;
 }
 
 /*
@@ -186,48 +244,76 @@ m2s_int m2sEnqueueWriteBuffer(m2s_command_queue command_queue, m2s_device_id *de
 m2s_int m2sEnqueueReadBuffer(m2s_command_queue command_queue, m2s_device_id *device, m2s_mem buffer, m2s_bool blocking_write, size_t offset, size_t size, void *ptr,
 	m2s_uint num_events_in_wait_list, const m2s_event *event_wait_list, m2s_event *event)
 {
-	/*
-	switch (buffer->mem_hint) {
-
+	if (device->num_entries < 1) {
+		printf("EnqueueWriteBuffer Error: wrong num_entries of device\n");
+		return M2S_INVALID_NUM_ENTRIES;
 	}
-	*/
-	cl_int err;
-
-	// whole transfer version
-	for (int idx = 0; idx < buffer.num_entries; ++idx)
-	{
-		err = clEnqueueReadBuffer(command_queue.queues[idx], buffer.mems[idx], blocking_write, offset, size, ptr, num_events_in_wait_list, event_wait_list, event);
-
-		if (err != CL_SUCCESS) {
-			printf("EnqueueWriteBuffer Error: cannot write buffer\n");
-			return err;
+	if (command_queue.num_entries != device->num_entries || device->num_entries != buffer.num_entries) {
+		printf("EnqueueWriteBuffer Error: different num_entries between queue, device, buffer\n");
+		return M2S_INVALID_NUM_ENTRIES;
+	}
+	if (device->device_hint == NULL) {
+		if (m2sGetDeviceHints(device) != CL_SUCCESS) {
+			printf("EnqueueWriteBuffer Error: cannot produce device hint\n");
+			return M2S_INVALID_DEVICE_HINT;
 		}
 	}
 
-	return err;
-}
-
-/*
-*	target API: clEnqueueCopyBuffer
-*
-*	for now, not supported
-*/
-m2s_int m2sEnqueueCopyBuffer(m2s_command_queue *command_queue, m2s_mem *src_buffer, m2s_mem *dst_buffer, size_t src_offset, size_t dst_offset, size_t size, m2s_uint num_events_in_wait_list,
-	const m2s_event *event_wait_list, m2s_event *event)
-{
-	if (src_buffer->num_entries != dst_buffer->num_entries) {
-		printf("EnqueueCopyBuffer Error: cannot transfer data between differnet size buffer\n");
-		return M2S_TRANSFER_DATA_ERROR;
-	}
-
+	m2s_uint num = device->num_entries;
 	cl_int err;
 
-	for (int idx = 0; idx < command_queue->num_entries; ++idx) {
-		err = clEnqueueCopyBuffer(command_queue->queues[idx], src_buffer->mems[idx], dst_buffer->mems[idx], src_offset, dst_offset, size, num_events_in_wait_list, event_wait_list, event);
+	if (num == 1 || buffer.mem_hint == M2S_MEM_HINT_WHOLE) {
+		for (m2s_uint idx = 0; idx < buffer.num_entries; ++idx) {
+			err = clEnqueueReadBuffer(command_queue.queues[idx], buffer.mems[idx], CL_FALSE, offset, size, ptr, num_events_in_wait_list, event_wait_list, event);
+			if (err != CL_SUCCESS) {
+				printf("EnqueueWriteBuffer Error: cannot write buffer\n");
+				return err;
+			}
+		}
+	}
 
-		if (err != CL_SUCCESS) {
-			printf("EnqueueCopyBuffer Error: cannot write buffer\n");
-			return err;
+	else if (buffer.mem_hint == M2S_MEM_HINT_1D)
+	{
+		size_t current_size = 0;
+		size_t total_size = 0;
+
+		for (m2s_uint idx = 1; idx < num; ++idx)
+		{
+			current_size = size * device->device_hint[idx] / 100;
+
+			err = clEnqueueReadBuffer(command_queue.queues[idx], buffer.mems[idx], CL_FALSE, 0, current_size, (void *)((int *)ptr + total_size), 0, NULL, NULL);
+			if (err != CL_SUCCESS) {
+				printf("EnqueueWriteBuffer Error: cannot write buffer\n");
+				return err;
+			}
+
+			total_size += current_size;
+		}
+
+		if (size > total_size) {
+			current_size = size - total_size;
+			err = clEnqueueReadBuffer(command_queue.queues[0], buffer.mems[0], CL_FALSE, 0, current_size, (void *)((int *)ptr + total_size), 0, NULL, NULL);
+			if (err != CL_SUCCESS) {
+				printf("EnqueueWriteBuffer Error: cannot write buffer\n");
+				return err;
+			}
+		}
+		else {
+			printf("maybe memory division failed\n");
+		}
+	}
+
+	else if (buffer.mem_hint == M2S_MEM_HINT_ROW)
+	{
+	}
+
+	else if (buffer.mem_hint == M2S_MEM_HINT_COL)
+	{
+	}
+
+	if (blocking_write == CL_TRUE) {
+		for (m2s_uint idx = 0; idx < num; ++idx) {
+			clFinish(command_queue.queues[idx]);
 		}
 	}
 
@@ -248,7 +334,7 @@ m2s_int m2sSetKernelArg(m2s_kernel kernel, m2s_device_id *device, m2s_uint arg_i
 
 	cl_int err;
 
-	for (int idx = 0; idx < device->num_entries; ++idx) {
+	for (m2s_uint idx = 0; idx < device->num_entries; ++idx) {
 		err = clSetKernelArg(kernel, arg_index, sizeof(cl_mem), &arg_value->mems[idx]);
 
 		if (err != CL_SUCCESS) {
@@ -270,7 +356,7 @@ m2s_int m2sEnqueueNDRangeKernel(m2s_command_queue command_queue, m2s_kernel kern
 {
 	int num_entries = command_queue.num_entries;
 
-	if (num_entries == 0) {
+	if (num_entries < 1) {
 		printf("EnqueueNDRangeKernel Error: wrong num_entries of device\n");
 		return M2S_INVALID_NUM_ENTRIES;
 	}
@@ -336,4 +422,17 @@ m2s_int m2sGetDeviceHints(m2s_device_id *device)
 	free(max_mem_alloc_size);
 
 	return CL_SUCCESS;
+}
+
+m2s_device_id m2sMakeDeviceID(m2s_uint num_entries, cl_device_id *devices) {
+	m2s_device_id ret;
+
+	ret.initialize(num_entries);
+	for (m2s_uint idx = 0; idx < num_entries; ++idx) {
+		ret.devices[idx] = devices[idx];
+	}
+
+	m2sGetDeviceHints(&ret);
+
+	return ret;
 }

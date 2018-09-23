@@ -3,7 +3,7 @@
 
 #include "variables.h"
 
-
+// supposed that single platform & context
 
 // opencl_api.c
 extern m2s_int m2sGetPlatformIDs(m2s_uint num_entries,
@@ -49,7 +49,7 @@ extern m2s_int m2sEnqueueWriteBuffer(m2s_command_queue command_queue,
 									 m2s_bool blocking_write,
 									 size_t offset,
 									 size_t size,
-									 const void *ptr,
+									 void *ptr,
 									 m2s_uint num_events_in_wait_list,
 									 const m2s_event *event_wait_list,
 									 m2s_event *event);
@@ -95,3 +95,7 @@ extern m2s_int m2sReleaseMemObject();
 extern m2s_int m2sReleaseCommandQueue();
 
 extern m2s_int m2sGetDeviceHints(m2s_device_id *device);
+
+
+// only GPU
+extern m2s_device_id m2sMakeDeviceID(m2s_uint num_entries, cl_device_id *devices);

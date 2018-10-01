@@ -1,4 +1,4 @@
-#include "m2s.h"
+#include "m2s_api.h"
 
 /*
 *	target API: clGetPlatformIDs
@@ -30,12 +30,21 @@ m2s_int m2sGetDeviceIDs(m2s_platform_id platform, m2s_device_type device_type, m
 		return clGetDeviceIDs(platform, device_type, 0, NULL, num_devices);
 	}
 	else if (num_entries > 0) {
-		device->initialize(num_entries);
-		if (m2sGetDeviceHints(device) != CL_SUCCESS) {
-			return M2S_INVALID_DEVICE_HINT;
+		cl_uint temp;
+		clGetDeviceIDs(platform, device_type, 0, NULL, &temp);
+
+		if (temp == num_entries) {
+			device->initialize(num_entries);
+			if (m2sGetDeviceHints(device) != CL_SUCCESS) {
+				device->finalize();
+				return M2S_INVALID_DEVICE_HINT;
+			}
+			return clGetDeviceIDs(platform, device_type, num_entries, device->devices, NULL);
 		}
-		
-		return clGetDeviceIDs(platform, device_type, num_entries, device->devices, NULL);
+		else {
+			printf("GetDeviceIDs ERROR: not matched num_entries\n");
+			return M2S_INVALID_NUM_ENTRIES;
+		}
 	}
 	else {
 		printf("GetDeviceIDs ERROR: negative num_entries of devices\n");
@@ -51,6 +60,7 @@ m2s_int m2sGetDeviceIDs(m2s_platform_id platform, m2s_device_type device_type, m
 m2s_context m2sCreateContext(const m2s_context_properties *properties, const m2s_device_id device, void *pfn_notify, void *user_data, m2s_int *errcode_ret)
 {
 	if (device.num_entries > 0) {
+		//printf("m2sCreateContext : num entries: %d\n", device.num_entries);
 		return clCreateContext(properties, device.num_entries, device.devices, NULL, NULL, errcode_ret);
 	}
 	else {
@@ -351,26 +361,75 @@ m2s_int m2sSetKernelArg(m2s_kernel kernel, m2s_device_id *device, m2s_uint arg_i
 *
 *
 */
-m2s_int m2sEnqueueNDRangeKernel(m2s_command_queue command_queue, m2s_kernel kernel, m2s_uint work_dim, const size_t *global_work_offset, const size_t *global_work_size,
+m2s_int m2sEnqueueNDRangeKernel(m2s_command_queue command_queue, m2s_device_id *device, m2s_kernel kernel, m2s_uint work_dim, const size_t *global_work_offset, const size_t *global_work_size,
 	const size_t *local_work_size, m2s_uint num_events_in_wait_list, const m2s_event *event_wait_list, m2s_event *event)
 {
-	int num_entries = command_queue.num_entries;
-
-	if (num_entries < 1) {
-		printf("EnqueueNDRangeKernel Error: wrong num_entries of device\n");
+	if (device->num_entries < 1) {
+		printf("EnqueueWriteBuffer Error: wrong num_entries of device\n");
 		return M2S_INVALID_NUM_ENTRIES;
 	}
+	if (command_queue.num_entries != device->num_entries) {
+		printf("EnqueueWriteBuffer Error: different num_entries between queue, device\n");
+		return M2S_INVALID_NUM_ENTRIES;
+	}
+	if (device->device_hint == NULL) {
+		if (m2sGetDeviceHints(device) != CL_SUCCESS) {
+			printf("EnqueueWriteBuffer Error: cannot produce device hint\n");
+			return M2S_INVALID_DEVICE_HINT;
+		}
+	}
 
+	int num_entries = command_queue.num_entries;
 	cl_int err;
 
-	for (int idx = 0; idx < num_entries; ++idx)
+	if (work_dim == 1)
 	{
-		err = clEnqueueNDRangeKernel(command_queue.queues[idx], kernel, work_dim, global_work_offset, global_work_size, local_work_size, num_events_in_wait_list, event_wait_list, event);
+		size_t current_size = 0;
+		size_t total_size = 0;
 
-		if (err != CL_SUCCESS) {
-			printf("EnqueueNDRangeKernel Error: cannot run kernel on device\n");
-			return err;
+		for (int idx = 1; idx < num_entries; ++idx)
+		{
+			current_size = global_work_size[0] * device->device_hint[idx] / 100;
+
+			/*
+			err = (local_work_size == NULL) ?
+				clEnqueueNDRangeKernel(command_queue.queues[idx], kernel, 1, global_work_offset, global_work_size, NULL, num_events_in_wait_list, event_wait_list, event) :
+				clEnqueueNDRangeKernel(command_queue.queues[idx], kernel, 1, global_work_offset, global_work_size, NULL, num_events_in_wait_list, event_wait_list, event);
+			*/
+			err = clEnqueueNDRangeKernel(command_queue.queues[idx], kernel, 1, global_work_offset, &current_size, NULL, num_events_in_wait_list, event_wait_list, event);
+
+			if (err != CL_SUCCESS) {
+				printf("EnqueueNDRangeKernel Error: cannot run kernel on device\n");
+				return err;
+			}
+
+			total_size += current_size;
 		}
+
+		if (global_work_size[0] > total_size) {
+			current_size = global_work_size[0] - total_size;
+
+			/*
+			err = (local_work_size == NULL) ?
+				clEnqueueNDRangeKernel(command_queue.queues[0], kernel, 1, global_work_offset, global_work_size, NULL, num_events_in_wait_list, event_wait_list, event) :
+				clEnqueueNDRangeKernel(command_queue.queues[0], kernel, 1, global_work_offset, global_work_size, NULL, num_events_in_wait_list, event_wait_list, event);
+			*/
+			err = clEnqueueNDRangeKernel(command_queue.queues[0], kernel, 1, global_work_offset, &current_size, NULL, num_events_in_wait_list, event_wait_list, event);
+
+			if (err != CL_SUCCESS) {
+				printf("EnqueueWriteBuffer Error: cannot write buffer\n");
+				return err;
+			}
+		}
+		else {
+			printf("maybe task division failed\n");
+		}
+	}
+	
+	else if (work_dim == 2) {
+	}
+	
+	else if (work_dim == 3) {
 	}
 
 	return err;
@@ -392,6 +451,8 @@ m2s_int m2sGetDeviceHints(m2s_device_id *device)
 	}
 
 	int n = device->num_entries;
+	if (device->device_hint != NULL)
+		free(device->device_hint);
 	device->device_hint = (cl_uint *)malloc(sizeof(cl_uint) * n);
 
 	cl_ulong *local_mem_size = (cl_ulong *)malloc(sizeof(cl_ulong) * n);

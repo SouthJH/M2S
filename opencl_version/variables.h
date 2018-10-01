@@ -33,6 +33,7 @@ typedef struct M2S_DEViCE {
 		if (num <= 0)
 			return 0;
 		num_entries = num;
+		device_hint = NULL;
 		devices = (cl_device_id *)malloc(sizeof(cl_device_id) * num);
 		if (devices == NULL) {
 			return 1;

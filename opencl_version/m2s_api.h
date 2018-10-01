@@ -78,6 +78,7 @@ extern m2s_int m2sSetKernelArg(m2s_kernel kernel,
 							   size_t arg_size,
 							   m2s_mem *arg_value);
 extern m2s_int m2sEnqueueNDRangeKernel(m2s_command_queue command_queue,
+									   m2s_device_id *device,
 									   m2s_kernel kernel,
 									   m2s_uint work_dim,
 									   const size_t *global_work_offset,
@@ -86,6 +87,7 @@ extern m2s_int m2sEnqueueNDRangeKernel(m2s_command_queue command_queue,
 									   m2s_uint num_events_in_wait_list,
 									   const m2s_event *event_wait_list,
 									   m2s_event *event);
+
 extern m2s_int m2sFinish(m2s_command_queue command_queue);
 extern m2s_int m2sWaitForEvents(m2s_uint num_events,
 								const m2s_event *event_list);

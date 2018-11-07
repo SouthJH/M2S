@@ -1,27 +1,49 @@
+#pragma once
 #include <CL/cl.h>
+#include <vector>
 
-#define   SUCCESS   0
+#define		DEBUG_MODE
+
+#ifdef	DEBUG_MODE
+	#include <stdio.h>
+#endif
+
+#define		SUCCESS   0
 
 // api.c ERRORS
 #define		M2S_INVALID_NUM_ENTRIES		0x010
 #define		M2S_TRANSFER_DATA_ERROR		0x011
 #define		M2S_INVALID_DEVICE_HINT		0x012
+#define		M2S_MEMORY_ALLOC_FAILED		0x013
+#define		M2S_CREATE_QUEUE_FAILED		0x014
+#define		M2S_CREATE_BUFFR_FAILED		0x015
+#define		M2S_SET_ARGUMENT_FAILED		0x016
 
 
 // hints
-#define		M2S_MEM_HINT_1D				0x100
-#define		M2S_MEM_HINT_ROW			0x101
-#define		M2S_MEM_HINT_COL			0x102
-#define		M2S_MEM_HINT_BLK			0X103
-#define		M2S_MEM_HINT_SORT			0x104
-#define		M2S_MEM_HINT_WHOLE			0x105
-#define		M2S_MEM_HINT_MAT			0x106
+#define		M2S_HINT_HEAD			0x100
+#define		M2S_HINT_1D_ALL			0x101
+#define		M2S_HINT_1D_X			0x102
+#define		M2S_HINT_1D_SORT		0x103
+#define		M2S_HINT_2D_ALL			0x104
+#define		M2S_HINT_2D_X			0x105
+#define		M2S_HINT_2D_Y			0x106
+#define		M2S_HINT_2D_BLK			0x107
+#define		M2S_HINT_3D_ALL			0x108
+#define		M2S_HINT_3D_X			0x109
+#define		M2S_HINT_3D_Y			0x110
+#define		M2S_HINT_3D_Z			0x111
+#define		M2S_HINT_3D_BLK			0x112
+#define		M2S_HINT_TAIL			0x113
 
-#define		M2S_DATA_TYPE_CHAR			0x200
-#define		M2S_DATA_TYPE_INT			0x201
-#define		M2S_DATA_TYPE_UINT			0x202
-#define		M2S_DATA_TYPE_FLOAT			0x203
-#define		M2S_DATA_TYPE_DOUBLE		0x204
+
+#define		M2S_DATA_TYPE_HEAD			0x200
+#define		M2S_DATA_TYPE_CHAR			0x201
+#define		M2S_DATA_TYPE_INT			0x202
+#define		M2S_DATA_TYPE_UINT			0x203
+#define		M2S_DATA_TYPE_FLOAT			0x204
+#define		M2S_DATA_TYPE_DOUBLE		0x205
+#define		M2S_DATA_TYPE_TAIL			0x206
 
 
 // parameters

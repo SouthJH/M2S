@@ -2,7 +2,7 @@
 #include <CL/cl.h>
 #include <vector>
 
-#define		DEBUG_MODE
+//#define		DEBUG_MODE
 
 #ifdef	DEBUG_MODE
 	#include <stdio.h>
